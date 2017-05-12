@@ -1,0 +1,31 @@
+#!/usr/bin/env node
+
+const effectFetcher = require('../effect-fetcher.js');
+const twitter = require('../twitter.js');
+
+let runAttempt = 1;
+const MAX_ATTEMPTS = 10;
+
+run();
+
+function run() {
+  effectFetcher.fetch().then(function(data) {
+    console.log('Successfully fetched page', data);
+    
+    twitter.tweet(data, function(err, data, response) {
+      if (err) {
+        console.log(`Twitter error ${err.code}: ${err.message}`);
+
+        switch(err.code) {
+          case 187:
+            if (++runAttempt <= MAX_ATTEMPTS) {
+              console.log(`Attempting to fetch new page. Attempt ${runAttempt} of ${MAX_ATTEMPTS}`);
+              setTimeout(run, 10000);
+            }
+            break;
+          default:
+        }
+      }
+    });
+  });
+}
